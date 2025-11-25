@@ -23,10 +23,10 @@ RECEIVER_EMAIL = "kmdchoi84@naver.com"
 if 'agreed' not in st.session_state:
     st.session_state['agreed'] = False
 
-# URL 파라미터 처리
+# URL 파라미터 처리 (폰번호 삭제됨)
 query_params = st.query_params
 default_name = query_params.get("name", "")
-default_phone = query_params.get("phone", "")
+# default_phone 삭제됨
 reserved_date_raw = query_params.get("date", "")
 reserved_date = reserved_date_raw.replace("_", " ").replace("+", " ")
 
@@ -53,10 +53,11 @@ def send_email_with_json(final_data):
         job_env = final_data['기초정보'].get('생활환경', [])
         job_env_str = ", ".join(job_env) if job_env else "선택 없음"
         
+        # 본문에 연락처 대신 생년월일 표시
         body_text = f"""
         환자명: {patient_name}
+        생년월일: {final_data['환자정보'].get('생년월일', '미입력')}
         예약정보: {final_data['환자정보'].get('예약일시', '정보없음')}
-        연락처: {final_data['환자정보']['연락처']}
         """
         msg.attach(MIMEText(body_text, 'plain', 'utf-8'))
         
@@ -91,7 +92,7 @@ if not st.session_state['agreed']:
     **[필수] 개인정보 및 민감정보 수집·이용 동의**
     
     1. **수집 목적**: 진료 예약 확인 및 사전 증상 파악
-    2. **수집 항목**: 성명, 연락처, 신체정보, 건강 관련 증상
+    2. **수집 항목**: 성명, 생년월일, 신체정보, 건강 관련 증상
     3. **보유 기간**: **전송 완료 후 서버에서 즉시 삭제**
     4. **거부 권리**: 동의를 거부할 수 있으나, 문진 이용이 제한됩니다.
     """
@@ -108,7 +109,7 @@ if not st.session_state['agreed']:
 # [B] 문진표 작성 페이지
 else:
     # ----------------------------------------
-    # UI 스타일
+    # UI 스타일 (PC 간격 더 확보)
     # ----------------------------------------
     custom_css = """
     <style>
@@ -120,18 +121,22 @@ else:
         /* PC 스타일 (769px 이상) */
         @media (min-width: 769px) {
             .pc-header {
-                position: fixed; top: 0; left: 0; width: 100%; height: 140px;
+                position: fixed; top: 0; left: 0; width: 100%; 
+                height: 180px; /* 헤더 높이 더 늘림 (160->180) */
                 background-color: white; z-index: 1000; border-bottom: 1px solid #ddd;
-                text-align: center; padding-top: 20px; display: block;
+                text-align: center; padding-top: 30px; display: block;
             }
-            .block-container { padding-top: 160px !important; }
+            .block-container { padding-top: 200px !important; } /* 본문 시작점 내림 */
+            
             div.stButton > button:first-child {
                 position: fixed !important; 
-                top: 85px !important; 
+                top: 120px !important; /* 버튼 위치 내림 */
                 left: 50% !important;
                 transform: translateX(-50%) !important; 
                 z-index: 2000 !important;
-                width: 300px !important;
+                width: 320px !important;
+                height: 50px !important;
+                font-size: 18px !important;
                 background-color: #ff4b4b !important; color: white !important;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
             }
@@ -149,8 +154,8 @@ else:
             .mobile-title { display: block !important; }
         }
         
-        .header-title-small {font-size: 1.0rem; color: #666; margin: 0;}
-        .header-title-large {font-size: 2.0rem; font-weight: 800; color: #333; margin-top: 5px;}
+        .header-title-small {font-size: 1.1rem; color: #666; margin: 0;}
+        .header-title-large {font-size: 2.2rem; font-weight: 800; color: #333; margin-top: 5px;}
     </style>
 
     <div class="pc-header">
@@ -161,7 +166,7 @@ else:
     st.markdown(custom_css, unsafe_allow_html=True)
 
     # ==========================================
-    # 메인 컨테이너 (여기에 모든 입력폼을 담음)
+    # 메인 컨테이너
     # ==========================================
     main_container = st.empty()
 
@@ -175,9 +180,13 @@ else:
         </div>
         """, unsafe_allow_html=True)
 
+        # [수정됨] 이름 및 생년월일 입력
         col1, col2 = st.columns(2)
-        with col1: name = st.text_input("성함", value=default_name, placeholder="예: 홍길동")
-        with col2: phone = st.text_input("연락처", value=default_phone, placeholder="예: 010-0000-0000")
+        with col1: 
+            name = st.text_input("성함", value=default_name, placeholder="예: 홍길동")
+        with col2: 
+            # 폰번호 -> 생년월일로 변경
+            birth_date_input = st.text_input("생년월일 (6자리)", placeholder="예: 841121")
 
         # 1. 기초 정보
         basic_info_data = {}
@@ -241,33 +250,39 @@ else:
             hist = st.text_area("입력란", height=80, key="hist_input")
             if hist: medical_history["과거력"] = hist
 
-        st.write("\n\n")
+        # 하단 여백 추가 (스피너 보일 공간)
+        st.write("\n\n\n\n\n")
         
         # ------------------------------------------------
-        # [핵심] 제출 버튼 및 즉시 화면 전환 로직
+        # [핵심] 제출 버튼
         # ------------------------------------------------
         if st.button("문진표 제출하기"):
-            if not name or not phone:
-                st.warning("⚠️ 성함과 연락처는 필수입니다.")
+            # 1. 생년월일 처리 (8자리 -> 6자리 변환 로직)
+            cleaned_birth = birth_date_input.replace("-", "").replace(" ", "").replace(".", "")
+            if len(cleaned_birth) == 8:
+                cleaned_birth = cleaned_birth[2:] # 19841121 -> 841121
+            
+            # 2. 유효성 검사
+            if not name or not cleaned_birth:
+                st.warning("⚠️ 성함과 생년월일은 필수입니다.")
+            elif len(cleaned_birth) != 6:
+                st.warning("⚠️ 생년월일은 6자리로 입력해주세요. (예: 841121)")
             elif not (user_responses or basic_info_data.get('생활환경') or medical_history):
                 st.warning("⚠️ 증상이나 정보를 하나라도 입력해주세요.")
             else:
-                # 1. 심플 스피너 (화면 전환 전)
+                # 3. 심플 스피너
                 with st.spinner("AI 분석을 위해 변환 및 전송중..."):
                     final_data = {
-                        "환자정보": {"성함": name, "연락처": phone, "예약일시": reserved_date},
+                        "환자정보": {"성함": name, "생년월일": cleaned_birth, "예약일시": reserved_date},
                         "기초정보": basic_info_data,
                         "문진내용": user_responses,
                         "상세정보": medical_history
                     }
                     result = send_email_with_json(final_data)
                 
-                # 2. 결과 처리
+                # 4. 결과 처리
                 if result == "SUCCESS":
-                    # [중요] 성공 시에만 입력폼 컨테이너를 비워버림 (새로고침 X)
                     main_container.empty()
-                    
-                    # 완료 메시지 바로 출력
                     st.success("제출 완료!")
                     st.markdown(f"""
                     <div style="text-align: center; padding: 50px 20px;">
@@ -284,7 +299,7 @@ else:
                         <h4>소유한의원 원장 최아랑 올림</h4>
                     </div>
                     """, unsafe_allow_html=True)
-                    st.balloons()
+                    # st.balloons() 삭제됨
                     
                 elif result == "NO_PASSWORD":
                     st.error("🚨 서버 설정 오류: Secrets 비밀번호가 없습니다.")
