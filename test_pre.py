@@ -7,17 +7,15 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 
 # ==========================================
-# 1. 설정 및 초기화 (디버깅 모드)
+# 1. 설정 및 초기화
 # ==========================================
 st.set_page_config(page_title="소유한의원 문진표", layout="wide")
 
-# 비밀번호 확인용 디버깅 (보안상 실제 비번은 출력 안 함)
+# 비밀번호 로드 (오류 처리 강화)
 try:
     SENDER_PASSWORD = st.secrets["naver_password"]
-    is_password_set = "✅ 비밀번호 설정됨"
-except Exception as e:
+except:
     SENDER_PASSWORD = ""
-    is_password_set = f"❌ 비밀번호 로드 실패: {e}"
 
 SENDER_EMAIL = "kmdchoi84@naver.com"
 RECEIVER_EMAIL = "kmdchoi84@naver.com"
@@ -32,18 +30,16 @@ reserved_date_raw = query_params.get("date", "")
 reserved_date = reserved_date_raw.replace("_", " ").replace("+", " ")
 
 # ==========================================
-# 2. 이메일 전송 함수 (에러 적나라하게 표시)
+# 2. 이메일 전송 함수 (상태값 명확히 리턴)
 # ==========================================
 def send_email_with_json(final_data):
-    # 비밀번호 없으면 바로 리턴
     if not SENDER_PASSWORD:
-        return "SECRET_KEY_MISSING_ERROR"
+        return "NO_PASSWORD" # 비밀번호 없음
 
     try:
-        smtp = smtplib.SMTP('smtp.naver.com', 587)
+        smtp = smtplib.SMTP('smtp.naver.com', 587, timeout=10) # 10초 타임아웃 설정
         smtp.ehlo()
         smtp.starttls()
-        # 여기서 로그인 시도
         smtp.login(SENDER_EMAIL, SENDER_PASSWORD)
         
         msg = MIMEMultipart()
@@ -71,37 +67,32 @@ def send_email_with_json(final_data):
         smtp.sendmail(SENDER_EMAIL, RECEIVER_EMAIL, msg.as_string())
         smtp.quit()
         return "SUCCESS"
-    
+        
     except smtplib.SMTPAuthenticationError:
-        return "AUTH_ERROR: 아이디나 비밀번호(앱비번)가 틀렸습니다."
+        return "AUTH_ERROR" # 비번 틀림
+    except smtplib.SMTPConnectError:
+        return "CONNECT_ERROR" # 네이버 접속 불가
     except Exception as e:
-        # 그 외 모든 에러를 문자열로 반환
-        return f"UNKNOWN_ERROR: {str(e)}"
+        return f"UNKNOWN: {str(e)}"
 
 # ==========================================
 # 3. 화면 로직
 # ==========================================
 
-# [화면 A] 동의서 페이지
+# [A] 동의서 페이지
 if not st.session_state['agreed']:
     st.title("소유한의원 사전 문진")
     st.markdown("---")
-    
-    # 디버깅용 메시지 (원장님만 확인 후 삭제하세요)
-    # st.caption(f"시스템 상태: {is_password_set}") 
-    
     if reserved_date:
         st.info(f"📅 예약일시: {reserved_date}")
         
-    st.write("원활한 진료를 위해 개인정보 수집 및 이용에 동의해 주세요.")
-    
     agreement_text = """
     **[필수] 개인정보 및 민감정보 수집·이용 동의**
     
     1. **수집 목적**: 진료 예약 확인 및 사전 증상 파악
-    2. **수집 항목**: 성명, 연락처, 신체정보, 건강 관련 증상(민감정보)
-    3. **보유 기간**: **전송 완료 후 서버에서 즉시 삭제 (원장 이메일로 전송)**
-    4. **거부 권리**: 동의를 거부할 수 있으나, 이 경우 사전 문진 이용이 제한됩니다.
+    2. **수집 항목**: 성명, 연락처, 신체정보, 건강 관련 증상
+    3. **보유 기간**: **전송 완료 후 서버에서 즉시 삭제**
+    4. **거부 권리**: 동의를 거부할 수 있으나, 문진 이용이 제한됩니다.
     """
     st.markdown(agreement_text)
     
@@ -115,49 +106,62 @@ if not st.session_state['agreed']:
         else:
             st.warning("동의 항목에 체크해주셔야 합니다.")
 
-# [화면 B] 문진표 작성 페이지
+# [B] 문진표 작성 페이지
 else:
-    # 스타일 코드 (유지)
+    # ----------------------------------------
+    # CSS 스타일 (버튼 위치 수정 및 안정화)
+    # ----------------------------------------
     custom_css = """
     <style>
-        #MainMenu, header, footer {visibility: hidden; height: 0;}
+        /* 기본 헤더 숨기기 */
+        header {visibility: hidden;}
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
         [data-testid="stToolbar"] {visibility: hidden; height: 0;}
-        [data-testid="stDecoration"] {visibility: hidden; height: 0;}
         .stDeployButton {display:none;}
         
-        div[data-testid="stAppViewContainer"] > .main { padding-top: 0px !important; }
-        
+        /* PC 스타일 (769px 이상) */
         @media (min-width: 769px) {
+            /* 상단 흰색 바 */
             .pc-header {
-                position: fixed; top: 0; left: 0; width: 100%; height: 120px;
-                background-color: white; z-index: 99999; border-bottom: 1px solid #ddd;
+                position: fixed; top: 0; left: 0; width: 100%; height: 100px;
+                background-color: white; z-index: 1000; border-bottom: 1px solid #ddd;
                 text-align: center; padding-top: 15px; display: block;
             }
-            .block-container { padding-top: 140px !important; }
+            /* 본문 내리기 */
+            .block-container { padding-top: 120px !important; }
+            
+            /* 버튼을 헤더 위로 올리기 */
             div.stButton > button:first-child {
-                position: fixed !important; top: 70px !important; left: 50% !important;
-                transform: translateX(-50%) !important; z-index: 100000 !important;
-                width: 400px !important;
+                position: fixed !important; 
+                top: 55px !important; 
+                left: 50% !important;
+                transform: translateX(-50%) !important; 
+                z-index: 2000 !important;
+                width: 300px !important;
                 background-color: #ff4b4b !important; color: white !important;
-                border-radius: 8px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
             }
-            .mobile-only-title { display: none !important; }
+            .mobile-title { display: none !important; }
         }
 
+        /* 모바일 스타일 (768px 이하) */
         @media (max-width: 768px) {
             .pc-header { display: none !important; }
             .block-container { padding-top: 1rem !important; }
+            
+            /* 버튼 하단 정상 배치 (fixed 제거) */
             div.stButton > button:first-child {
-                width: 100% !important; background-color: #ff4b4b !important; color: white !important;
-                border-radius: 8px !important; height: 50px !important;
-                font-size: 18px !important; font-weight: bold !important; margin-top: 20px !important;
+                width: 100% !important;
+                background-color: #ff4b4b !important; color: white !important;
+                margin-top: 20px !important;
+                z-index: 1 !important;
             }
-            .mobile-only-title { display: block !important; }
-            header[data-testid="stHeader"] { z-index: -1; opacity: 0; pointer-events: none; }
+            .mobile-title { display: block !important; }
         }
         
-        .header-title-small {font-size: 1.0rem; color: #666; margin-bottom: 0px;}
-        .header-title-large {font-size: 1.8rem; font-weight: 800; color: #333; margin-top: 0px;}
+        .header-title-small {font-size: 1.0rem; color: #666; margin: 0;}
+        .header-title-large {font-size: 1.8rem; font-weight: 800; color: #333; margin: 0;}
     </style>
 
     <div class="pc-header">
@@ -167,11 +171,13 @@ else:
     """
     st.markdown(custom_css, unsafe_allow_html=True)
 
+    # 메인 컨테이너
     main_container = st.empty()
 
     with main_container.container():
+        # 모바일용 제목
         st.markdown(f"""
-        <div class="mobile-only-title" style='text-align:center; margin-bottom: 20px;'>
+        <div class="mobile-title" style='text-align:center; margin-bottom: 20px;'>
             <h3 style='color:#333; margin:0;'>소유한의원 사전 문진표</h3>
             <p style='color:#0068c3; font-weight:bold; margin-top:5px;'>📅 예약일시: {reserved_date if reserved_date else '미지정'}</p>
             <hr>
@@ -232,21 +238,64 @@ else:
 
         medical_history = {}
         with st.expander("13. 현재 복약 중인 약 (양약/한약)"):
-            st.info("💡 현재 드시고 계신 약의 이름이나 처방 목적을 최대한 자세히 적어주세요.")
-            med = st.text_area("입력란", height=80, key="med_input", placeholder="예: 고혈압약(아침 1알), 당뇨약, 최근 감기약 복용 중...")
+            st.info("💡 처방 목적 등을 자세히 적어주세요.")
+            med = st.text_area("입력란", height=80, key="med_input")
             if med: medical_history["복약정보"] = med
 
         with st.expander("14. 현재 복용 중인 건강기능식품"):
-            st.info("💡 비타민, 홍삼, 유산균 등 드시는 영양제를 모두 적어주시면 치료에 도움이 됩니다.")
-            sup = st.text_area("입력란", height=80, key="sup_input", placeholder="예: 종합비타민, 오메가3, 홍삼진액...")
+            st.info("💡 영양제 이름을 적어주세요.")
+            sup = st.text_area("입력란", height=80, key="sup_input")
             if sup: medical_history["건강기능식품"] = sup
 
         with st.expander("15. 수술 및 기타 과거력"):
-            st.info("💡 수술 이력, 입원 병력, 혹은 크게 앓았던 질환과 그 시기(몇 년 전)를 적어주세요.")
-            hist = st.text_area("입력란", height=80, key="hist_input", placeholder="예: 3년 전 맹장수술, 10년 전 교통사고로 허리 입원치료...")
+            st.info("💡 수술 이력, 병력을 적어주세요.")
+            hist = st.text_area("입력란", height=80, key="hist_input")
             if hist: medical_history["과거력"] = hist
 
         st.write("\n\n")
         
         # ------------------------------------------------
         # 제출 버튼
+        # ------------------------------------------------
+        if st.button("문진표 제출하기"):
+            if not name or not phone:
+                st.warning("⚠️ 성함과 연락처는 필수입니다.")
+            elif not (user_responses or basic_info_data.get('생활환경') or medical_history):
+                st.warning("⚠️ 증상이나 정보를 하나라도 입력해주세요.")
+            else:
+                # 1. 상태 표시
+                status = st.empty()
+                status.info("🚀 소유한의원 원장님께 전송 중입니다... (잠시만 기다려주세요)")
+                
+                final_data = {
+                    "환자정보": {"성함": name, "연락처": phone, "예약일시": reserved_date},
+                    "기초정보": basic_info_data,
+                    "문진내용": user_responses,
+                    "상세정보": medical_history
+                }
+                
+                # 2. 메일 전송 시도
+                result = send_email_with_json(final_data)
+                
+                # 3. 결과에 따른 분기 (성공해야만 화면 지움)
+                if result == "SUCCESS":
+                    main_container.empty()
+                    status.empty()
+                    st.success("제출 완료!")
+                    st.markdown(f"""
+                    <div style="text-align: center; padding: 50px 20px;">
+                        <h1 style="color: #0068c3;">제출이 완료되었습니다!</h1>
+                        <br>
+                        <h3>{name} 님, <br>{reserved_date if reserved_date else ""} 진료 예약이 확인되었습니다.</h3>
+                        <br>
+                        <h4>소유한의원 원장 최아랑 올림</h4>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    st.balloons()
+                
+                elif result == "NO_PASSWORD":
+                    status.error("🚨 서버 설정 오류: Secrets 비밀번호가 없습니다.")
+                elif result == "AUTH_ERROR":
+                    status.error("🚨 인증 실패: 네이버 아이디나 앱비밀번호를 확인하세요.")
+                else:
+                    status.error(f"🚨 전송 실패: {result}")
