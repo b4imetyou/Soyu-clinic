@@ -29,6 +29,7 @@ query_params = st.query_params
 default_name = query_params.get("name", "")
 default_phone = query_params.get("phone", "")
 reserved_date = query_params.get("date", "")
+reserved_date = reserved_date.replace("_", " ").replace("+", " ") # 언더바나 더하기를 공백으로 변환
 
 
 # ==========================================
