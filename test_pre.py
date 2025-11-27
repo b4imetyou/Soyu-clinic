@@ -30,164 +30,168 @@ reserved_date_raw = query_params.get("date", "")
 reserved_date = reserved_date_raw.replace("_", " ").replace("+", " ")
 
 # -------------------------------------------------------
-# [데이터] 문진표 구조 정의 (완전 세분화 버전)
-# 원장님 요청대로 뭉뚱그려진 증상을 개별 체크박스로 분리했습니다.
+# [데이터] 문진표 구조 정의 (항목 완전 분리형)
+# 소분류 제목에 상황(Context)을 명시하고, 항목은 증상별로 쪼갰습니다.
 # -------------------------------------------------------
 questionnaire_data = {
-    "1. 식욕 및 소화, 음수량 (食慾/消化)": {
-        "식후 증상 (밥 먹고 나서)": [
-            {"code": "DIG_01", "text": "식후 1~2시간 이내 트림이 자주 난다"},
-            {"code": "DIG_02", "text": "식후 배가 아프다 (복통)"},
-            {"code": "DIG_03", "text": "식후 속이 더부룩하다"},
-            {"code": "DIG_04", "text": "식후 속이 쓰리다"},
-            {"code": "DIG_05", "text": "고기나 기름진 음식 먹으면 속이 불편하다"},
-            {"code": "DIG_06", "text": "스트레스를 받으면 체하거나 속이 불편하다"}
+    "1. 식욕 및 소화 (食慾/消化)": {
+        "식후 반응 (밥 먹고 1~2시간 이내)": [
+            {"code": "DIG_01", "text": "트림이 계속 나온다"},
+            {"code": "DIG_02", "text": "배가 아프다 (복통)"},
+            {"code": "DIG_03", "text": "속이 꽉 막힌 듯 더부룩하다"},
+            {"code": "DIG_04", "text": "속이 쓰리다"},
+            {"code": "DIG_05", "text": "신물이 올라온다"}
+        ],
+        "특정 음식 및 스트레스 반응": [
+            {"code": "DIG_06", "text": "고기나 기름진 음식을 먹으면 불편하다"},
+            {"code": "DIG_07", "text": "스트레스를 받으면 체하거나 속이 불편하다"}
         ],
         "공복/식전 증상 (밥 먹기 전)": [
-            {"code": "DIG_07", "text": "공복에 속이 쓰리거나 불편하다"},
-            {"code": "DIG_08", "text": "배가 고프면 신경이 예민해진다"},
-            {"code": "DIG_09", "text": "식전에 물을 마셔야 밥이 넘어간다"}
+            {"code": "DIG_08", "text": "공복에 속이 쓰리다"},
+            {"code": "DIG_09", "text": "공복에 속이 미식거리거나 불편하다"},
+            {"code": "DIG_10", "text": "배가 고프면 신경이 날카로워진다"},
+            {"code": "DIG_11", "text": "식전에 물을 마셔야 밥이 넘어간다"}
         ],
-        "소화 (복부 자각)": [
-            {"code": "DIG_10", "text": "상복부(명치)가 답답한 느낌이 있다"},
-            {"code": "DIG_11", "text": "배가 빵빵하게 불러오는 느낌(복만)이 있다"}
+        "복부의 자각 증상": [
+            {"code": "DIG_12", "text": "명치 끝이 답답하다 (심하비)"},
+            {"code": "DIG_13", "text": "배가 가스가 찬 듯 빵빵하다 (복만)"}
         ],
         "식욕 및 구역감": [
-            {"code": "DIG_12", "text": "속이 울렁거린다 (오심)"},
-            {"code": "DIG_13", "text": "토할 것 같다 (구토감)"},
-            {"code": "DIG_14", "text": "입맛이 통 없어서 식사를 거른다 (식욕부진)"},
-            {"code": "DIG_15", "text": "식욕을 참을 수 없다 (과식, 폭식)"}
+            {"code": "DIG_14", "text": "속이 울렁거린다 (오심)"},
+            {"code": "DIG_15", "text": "토할 것 같다 (구토감)"},
+            {"code": "DIG_16", "text": "입맛이 아예 없다 (식욕부진)"},
+            {"code": "DIG_17", "text": "식욕을 참을 수 없다 (과식/폭식)"}
         ],
-        "음수 (마시는 물)": [
-            {"code": "DIG_16", "text": "평소 갈증이 심해서 물을 자주 마신다"},
-            {"code": "DIG_17", "text": "입은 마르는데 물은 마시고 싶지 않다"},
-            {"code": "DIG_18", "text": "물보다는 커피나 음료수를 주로 마신다"}
+        "음수 (물 마시는 습관)": [
+            {"code": "DIG_18", "text": "갈증이 심해 물을 많이 마신다"},
+            {"code": "DIG_19", "text": "입은 마르는데 물은 안 마시고 싶다"},
+            {"code": "DIG_20", "text": "물 대신 커피나 음료수를 주로 마신다"}
         ]
     },
     "2. 대변 (大便)": {
-        "변의 모양과 색": [
-            {"code": "STL_01", "text": "대변에 밥알, 고기, 야채 등이 그대로 보인다"},
-            {"code": "STL_02", "text": "설사 혹은 풀어진 변이 자주 나온다"},
-            {"code": "STL_03", "text": "변이 돌처럼 단단하다"},
-            {"code": "STL_04", "text": "처음엔 단단하다가 뒤에는 풀어지는 변을 본다"},
-            {"code": "STL_05", "text": "변 색깔이 회색이거나 희미하다"},
-            {"code": "STL_06", "text": "변 색깔이 짜장면처럼 검다"},
-            {"code": "STL_07", "text": "대변에 피가 섞여 나온다 (혈변)"}
+        "변의 모양과 색 (최근 상태)": [
+            {"code": "STL_01", "text": "음식물(밥알, 야채)이 그대로 보인다"},
+            {"code": "STL_02", "text": "설사 혹은 물처럼 풀어진 변"},
+            {"code": "STL_03", "text": "돌처럼 단단한 변 (변비 경향)"},
+            {"code": "STL_04", "text": "처음엔 단단하다가 뒤에는 풀어지는 변"},
+            {"code": "STL_05", "text": "색이 회색이거나 희미하다"},
+            {"code": "STL_06", "text": "색이 짜장면처럼 검다"},
+            {"code": "STL_07", "text": "피가 섞여 나온다 (혈변)"}
         ],
         "배변 감각 및 가스": [
-            {"code": "STL_08", "text": "대변 냄새가 심하다"},
-            {"code": "STL_09", "text": "방귀 냄새가 독하다"},
-            {"code": "STL_10", "text": "대변을 봐도 덜 본 것 같다 (잔변감)"},
-            {"code": "STL_11", "text": "식사 도중 혹은 직후에 화장실을 간다"},
-            {"code": "STL_12", "text": "평소에 가스가 너무 자주 찬다"}
+            {"code": "STL_08", "text": "대변 냄새가 유독 심하다"},
+            {"code": "STL_09", "text": "방귀 냄새가 지독하다"},
+            {"code": "STL_10", "text": "대변을 봐도 남은 느낌이 있다 (잔변감)"},
+            {"code": "STL_11", "text": "식사 도중/직후에 화장실을 가야 한다"},
+            {"code": "STL_12", "text": "가스가 너무 자주 찬다"}
         ],
         "배변 습관": [
             {"code": "STL_13", "text": "아침에 대변을 못 보면 하루가 힘들다"},
-            {"code": "STL_14", "text": "변이 나올 때까지 시간이 오래 걸린다"}
+            {"code": "STL_14", "text": "변이 나올 때까지 시간이 한참 걸린다"}
         ]
     },
     "3. 소변 (小便)": {
         "소변의 양상": [
-            {"code": "URI_01", "text": "소변에 거품이 많다"},
-            {"code": "URI_02", "text": "소변 냄새가 심하다"},
-            {"code": "URI_03", "text": "소변 색이 붉거나 진하다"}
+            {"code": "URI_01", "text": "거품이 많다"},
+            {"code": "URI_02", "text": "냄새가 심하다"},
+            {"code": "URI_03", "text": "색이 붉거나 아주 진하다"}
         ],
-        "배뇨 습관 및 통증": [
+        "배뇨 습관": [
             {"code": "URI_04", "text": "자다가 소변 때문에 깬다 (야간뇨)"},
             {"code": "URI_05", "text": "소변을 보고 나서도 시원하지 않다 (잔뇨감)"},
-            {"code": "URI_06", "text": "소변이 마려우면 참기 힘들다 (급박뇨)"},
-            {"code": "URI_07", "text": "소변이 금방 나오지 않고 한참 기다려야 한다 (지연뇨)"},
-            {"code": "URI_08", "text": "소변 볼 때 통증이 있다 (배뇨통)"}
+            {"code": "URI_06", "text": "마려우면 참기 힘들다 (급박뇨)"},
+            {"code": "URI_07", "text": "한참 기다려야 나온다 (지연뇨)"},
+            {"code": "URI_08", "text": "소변 볼 때 아프다 (배뇨통)"}
         ]
     },
     "4. 땀 및 피부 (汗/皮)": {
         "땀 (Sweat)": [
-            {"code": "SKN_01", "text": "다른 사람들보다 땀이 많이 난다"},
+            {"code": "SKN_01", "text": "남들보다 땀이 많다"},
             {"code": "SKN_02", "text": "땀 냄새가 심하다"},
-            {"code": "SKN_03", "text": "몸에 열감은 있는데 땀은 전혀 안 난다"}
+            {"code": "SKN_03", "text": "열감은 있는데 땀은 전혀 안 난다"}
         ],
-        "피부 (Skin)": [
-            {"code": "SKN_04", "text": "피부가 자주 가렵다"},
-            {"code": "SKN_05", "text": "손발 껍질이 잘 벗겨진다"},
-            {"code": "SKN_06", "text": "상처 회복이 느리다"},
-            {"code": "SKN_07", "text": "닭살 피부가 있다"},
+        "피부 증상": [
+            {"code": "SKN_04", "text": "자주 가렵다"},
+            {"code": "SKN_05", "text": "손발 껍질이 벗겨진다"},
+            {"code": "SKN_06", "text": "상처가 잘 안 낫는다"},
+            {"code": "SKN_07", "text": "닭살 피부다"},
             {"code": "SKN_08", "text": "각질이 자주 일어난다"},
-            {"code": "SKN_09", "text": "피부 안쪽으로 단단한 덩어리가 잡힌다"},
-            {"code": "SKN_10", "text": "화농성 여드름(농포)이 잘 생긴다"},
+            {"code": "SKN_09", "text": "피부 속에 단단한 덩어리가 만져진다"},
+            {"code": "SKN_10", "text": "고름(농포)이 잡히는 여드름이 난다"},
             {"code": "SKN_11", "text": "블랙헤드가 심하다"}
         ]
     },
     "5. 수면 (睡眠)": {
         "잠들기/깨기": [
-            {"code": "SLP_01", "text": "자리에 누워도 잠들기 어렵다 (입면장애)"},
-            {"code": "SLP_02", "text": "자다가 자주 깬다 (수면유지장애)"},
+            {"code": "SLP_01", "text": "자리에 누워도 잠이 안 온다 (입면장애)"},
+            {"code": "SLP_02", "text": "자다가 자꾸 깬다 (수면유지장애)"},
             {"code": "SLP_03", "text": "새벽에 꼭 정해진 시간에 깬다"}
         ],
         "수면의 질": [
             {"code": "SLP_04", "text": "꿈을 많이 꾼다"},
             {"code": "SLP_05", "text": "아침에 일어나기 너무 힘들다"},
             {"code": "SLP_06", "text": "코를 심하게 곤다"},
-            {"code": "SLP_07", "text": "자다가 일어나서 물을 마셔야 한다"}
+            {"code": "SLP_07", "text": "자다가 목말라서 물을 마신다"}
         ]
     },
     "6. 두면 및 이비인후과 (頭面)": {
-        "코/호흡기": [
-            {"code": "ENT_01", "text": "재채기가 자주 난다"},
-            {"code": "ENT_02", "text": "맑은 콧물이 흐른다"},
-            {"code": "ENT_03", "text": "코가 자주 막힌다"},
-            {"code": "ENT_04", "text": "기침을 자주 한다"},
-            {"code": "ENT_05", "text": "가래가 끓는다"},
-            {"code": "ENT_06", "text": "천식 진단을 받거나 증상이 있다"},
-            {"code": "ENT_07", "text": "환절기마다 비염이 도진다"},
-            {"code": "ENT_08", "text": "목소리가 자주 쉬거나 갈라진다"},
-            {"code": "ENT_09", "text": "말을 조금만 오래 해도 목이 아프다"},
-            {"code": "ENT_10", "text": "콧물이 목 뒤로 넘어가는 느낌(후비루)이 있다"}
+        "코/호흡기 증상": [
+            {"code": "ENT_01", "text": "재채기"},
+            {"code": "ENT_02", "text": "맑은 콧물"},
+            {"code": "ENT_03", "text": "코막힘"},
+            {"code": "ENT_04", "text": "기침"},
+            {"code": "ENT_05", "text": "가래"},
+            {"code": "ENT_06", "text": "천식 기운이 있다"},
+            {"code": "ENT_07", "text": "환절기 비염"},
+            {"code": "ENT_08", "text": "목소리가 쉰다"},
+            {"code": "ENT_09", "text": "말을 오래 하면 목이 아프다"},
+            {"code": "ENT_10", "text": "콧물이 목 뒤로 넘어간다 (후비루)"}
         ],
         "머리/눈/입/귀": [
-            {"code": "ENT_11", "text": "두통이 자주 있다"},
-            {"code": "ENT_12", "text": "앉았다 일어날 때 어지럽다 (기립성 현훈)"},
-            {"code": "ENT_13", "text": "눈알이 뻑뻑하고 뻐근하게 아프다"},
-            {"code": "ENT_14", "text": "입에서 자주 쓴맛이 난다 (구고)"},
-            {"code": "ENT_15", "text": "목구멍에 뭔가 걸린 듯한 이물감이 있다 (매핵기)"},
-            {"code": "ENT_16", "text": "귀에서 소리가 난다 (이명)"},
-            {"code": "ENT_17", "text": "탈모가 진행 중이다"},
-            {"code": "ENT_18", "text": "구내염이나 헤르페스가 자주 생긴다"},
-            {"code": "ENT_19", "text": "입술이 자주 마르고 갈라진다"}
+            {"code": "ENT_11", "text": "두통"},
+            {"code": "ENT_12", "text": "어지러움 (앉았다 일어날 때 등)"},
+            {"code": "ENT_13", "text": "눈이 뻑뻑하고 아프다"},
+            {"code": "ENT_14", "text": "입이 쓰다 (구고)"},
+            {"code": "ENT_15", "text": "목에 뭐가 걸린 느낌 (매핵기)"},
+            {"code": "ENT_16", "text": "이명 (귀에서 소리)"},
+            {"code": "ENT_17", "text": "탈모"},
+            {"code": "ENT_18", "text": "잦은 구내염/헤르페스"},
+            {"code": "ENT_19", "text": "입술 건조/갈라짐"}
         ]
     },
     "7. 한열 (寒熱)": {
-        "더위": [
-            {"code": "TMP_01", "text": "갑자기 열이 오르고 땀이 확 난다"},
-            {"code": "TMP_02", "text": "몸이 뜨겁고 더위를 남들보다 많이 탄다"},
-            {"code": "TMP_03", "text": "잘 때 손발이 화끈거려 이불 밖으로 낸다"},
-            {"code": "TMP_04", "text": "얼굴이 자주 붉어진다 (안면홍조)"}
+        "더위와 열감": [
+            {"code": "TMP_01", "text": "갑자기 열이 오르고 땀이 난다 (상열감)"},
+            {"code": "TMP_02", "text": "더위를 남들보다 많이 탄다"},
+            {"code": "TMP_03", "text": "잘 때 손발이 뜨거워 이불을 걷어찬다"},
+            {"code": "TMP_04", "text": "얼굴이 자주 붉어진다"}
         ],
         "추위": [
-            {"code": "TMP_05", "text": "남들보다 추위를 많이 탄다"},
-            {"code": "TMP_06", "text": "손발이 차갑다 (수족냉증)"}
+            {"code": "TMP_05", "text": "추위를 남들보다 많이 탄다"},
+            {"code": "TMP_06", "text": "손발이 차갑다"}
         ],
         "한열왕래": [
             {"code": "TMP_07", "text": "더웠다 추웠다 하는 증상이 반복된다"}
         ]
     },
-    "8. 근골격계 증상 및 통증 (筋骨/痛症)": {
-        "통증의 양상": [
+    "8. 근골격계 통증 (筋骨/痛症)": {
+        "통증의 양상 (악화/완화 요인)": [
             {"code": "MSK_01", "text": "몸을 움직이면 더 아프다"},
             {"code": "MSK_02", "text": "몸을 움직이면 오히려 덜 아프다"},
-            {"code": "MSK_03", "text": "누워서 쉬면 통증이 줄어든다"},
+            {"code": "MSK_03", "text": "누워서 쉬면 편하다"},
             {"code": "MSK_04", "text": "누워서 쉬어도 계속 불편하다"},
-            {"code": "MSK_05", "text": "아침에 일어날 때 통증이 제일 심하다"},
-            {"code": "MSK_06", "text": "오후나 저녁이 될수록 통증이 심해진다"},
-            {"code": "MSK_07", "text": "아픈 부위를 누르면 더 아프다 (압통)"},
-            {"code": "MSK_08", "text": "아픈 부위를 꾹 누르면 시원하다 (희안)"}
+            {"code": "MSK_05", "text": "아침 기상 시 가장 아프다"},
+            {"code": "MSK_06", "text": "오후/저녁으로 갈수록 아프다"},
+            {"code": "MSK_07", "text": "누르면 더 아프다 (압통)"},
+            {"code": "MSK_08", "text": "꾹 누르면 시원하다 (희안)"}
         ],
         "부종 및 감각": [
-            {"code": "MSK_09", "text": "아침에 손발이나 얼굴이 잘 붓는다"},
-            {"code": "MSK_10", "text": "저녁에 다리나 발이 붓는다"},
-            {"code": "MSK_11", "text": "몸이 좌우로 비틀어져 있는 느낌이다"},
-            {"code": "MSK_12", "text": "손이나 다리에 쥐가 자주 난다"},
-            {"code": "MSK_13", "text": "손발이 찌릿찌릿하다"},
-            {"code": "MSK_14", "text": "남의 살처럼 감각이 둔하다"}
+            {"code": "MSK_09", "text": "아침에 잘 붓는다 (얼굴/손)"},
+            {"code": "MSK_10", "text": "저녁에 잘 붓는다 (다리)"},
+            {"code": "MSK_11", "text": "몸이 비틀어진 느낌이다"},
+            {"code": "MSK_12", "text": "쥐가 자주 난다"},
+            {"code": "MSK_13", "text": "저림 (찌릿찌릿)"},
+            {"code": "MSK_14", "text": "감각 둔화 (남의 살 느낌)"}
         ]
     },
     "9. 흉부 및 정신 (胸部/精神)": {
@@ -195,48 +199,48 @@ questionnaire_data = {
             {"code": "CHM_01", "text": "숨 쉬는 게 불편하다"},
             {"code": "CHM_02", "text": "한숨을 자주 쉰다"},
             {"code": "CHM_03", "text": "조금만 걸어도 숨이 찬다"},
-            {"code": "CHM_04", "text": "옆구리가 결리는 느낌이 있다"},
-            {"code": "CHM_05", "text": "가슴이 타는 듯한 작열감이 있다"},
-            {"code": "CHM_06", "text": "심장이 두근거린다 (심계)"},
-            {"code": "CHM_07", "text": "딸꾹질을 자주 한다"}
+            {"code": "CHM_04", "text": "옆구리가 결린다"},
+            {"code": "CHM_05", "text": "가슴이 타는 듯하다"},
+            {"code": "CHM_06", "text": "심장이 두근거린다"},
+            {"code": "CHM_07", "text": "딸꾹질"}
         ],
         "정신/기억력": [
-            {"code": "CHM_08", "text": "사소한 일에 깜짝깜짝 잘 놀란다"},
-            {"code": "CHM_09", "text": "말을 더듬거나 단어가 잘 생각나지 않는다"},
-            {"code": "CHM_10", "text": "건망증이 심하다"},
-            {"code": "CHM_11", "text": "의욕이 없고 무기력하다"}
+            {"code": "CHM_08", "text": "잘 놀란다"},
+            {"code": "CHM_09", "text": "말을 더듬거나 단어가 생각 안 난다"},
+            {"code": "CHM_10", "text": "건망증"},
+            {"code": "CHM_11", "text": "무기력/의욕저하"}
         ]
     },
     "10. 기타 (其他)": {
         "체중": [
-            {"code": "ETC_01", "text": "최근 3개월간 3kg 이상 체중 변화가 있었다"}
+            {"code": "ETC_01", "text": "최근 3개월간 3kg 이상 체중 변화"}
         ]
     },
     "11. 남성 (男性)": {
         "남성 기능": [
-            {"code": "MEN_01", "text": "발기 부전이나 강직도 저하가 있다"},
-            {"code": "MEN_02", "text": "컨디션이 안 좋으면 조루 증상이 있다"},
-            {"code": "MEN_03", "text": "성관계 시 통증이 있다"},
-            {"code": "MEN_04", "text": "사정 후 정액이 저절로 흐른다 (유정)"}
+            {"code": "MEN_01", "text": "발기 부전 / 강직도 저하"},
+            {"code": "MEN_02", "text": "조루 (컨디션 저하 시)"},
+            {"code": "MEN_03", "text": "성관계 시 통증"},
+            {"code": "MEN_04", "text": "정액이 저절로 흐름 (유정)"}
         ]
     },
     "12. 여성 (女性)": {
         "생리/임신": [
-            {"code": "WMN_01", "text": "생리주기가 불규칙하다"},
-            {"code": "WMN_02", "text": "진통제를 먹어야 할 정도로 생리통이 심하다"},
-            {"code": "WMN_03", "text": "생리양이 너무 많다"},
-            {"code": "WMN_04", "text": "생리양이 너무 적다"},
-            {"code": "WMN_05", "text": "출산 후 급격히 살이 쪘다"},
-            {"code": "WMN_06", "text": "출산 후 여기저기 자주 아프다 (산후풍)"}
+            {"code": "WMN_01", "text": "생리주기 불규칙"},
+            {"code": "WMN_02", "text": "심한 생리통 (진통제 필수)"},
+            {"code": "WMN_03", "text": "생리양 과다"},
+            {"code": "WMN_04", "text": "생리양 과소"},
+            {"code": "WMN_05", "text": "출산 후 급격한 비만"},
+            {"code": "WMN_06", "text": "산후풍 (출산 후 관절통 등)"}
         ],
         "기타 여성 증상": [
-            {"code": "WMN_07", "text": "생리 전 가슴/겨드랑이 통증이 있다"},
-            {"code": "WMN_08", "text": "생리 전 감정 조절이 안 된다"},
-            {"code": "WMN_09", "text": "냉이 많고 냄새가 나거나 색이 이상하다"},
-            {"code": "WMN_10", "text": "질염이 자주 생긴다"},
-            {"code": "WMN_11", "text": "방광염이 자주 생긴다"},
-            {"code": "WMN_12", "text": "성관계 시 통증이 있다"},
-            {"code": "WMN_13", "text": "질건조증이 있다"}
+            {"code": "WMN_07", "text": "생리 전 가슴/겨드랑이 통증"},
+            {"code": "WMN_08", "text": "생리 전 감정 조절 불가"},
+            {"code": "WMN_09", "text": "냉대하 (양, 냄새, 색 이상)"},
+            {"code": "WMN_10", "text": "잦은 질염"},
+            {"code": "WMN_11", "text": "잦은 방광염"},
+            {"code": "WMN_12", "text": "성교통"},
+            {"code": "WMN_13", "text": "질건조증"}
         ]
     }
 }
@@ -257,7 +261,7 @@ def send_email_with_json(final_data):
 
         msg = MIMEMultipart()
         patient_name = final_data['환자정보']['성함']
-        msg['Subject'] = f"[소유한의원] {patient_name}님 문진표 도착 (Code Ver.)"
+        msg['Subject'] = f"[소유한의원] {patient_name}님 문진표 도착 (Ver.2.1)"
         msg['From'] = SENDER_EMAIL
         msg['To'] = RECEIVER_EMAIL
 
@@ -270,8 +274,7 @@ def send_email_with_json(final_data):
         [주소증]
         {final_data.get('주소증', '없음')}
 
-        * 상세 증상 데이터는 첨부된 JSON 파일을 확인하세요.
-        * 각 항목은 고유 코드(ID)로 기록되어 있습니다.
+        * 상세 내용은 첨부된 JSON 파일을 확인하세요.
         """
         msg.attach(MIMEText(body_text, 'plain', 'utf-8'))
 
@@ -301,9 +304,12 @@ def send_email_with_json(final_data):
 # ----------------------------------------
 st.markdown("""
 <style>
+    /* 기본 숨김 */
     header, #MainMenu, footer {visibility: hidden; height: 0;}
     [data-testid="stToolbar"] {visibility: hidden; height: 0;}
     .stDeployButton {display:none;}
+
+    /* 헤더 스타일 */
     .pc-header {
         position: fixed; top: 0; left: 0; width: 100%; 
         height: 120px; 
@@ -312,37 +318,51 @@ st.markdown("""
     }
     .header-title-small {font-size: 1.0rem; color: #666; margin: 0;}
     .header-title-large {font-size: 1.8rem; font-weight: 800; color: #333; margin-top: 5px;}
+
+    /* 컨테이너 여백 */
     .block-container { padding-top: 140px !important; max-width: 800px; }
+
+    /* 모바일 반응형 */
     @media (max-width: 768px) {
         .pc-header { display: none !important; }
         .block-container { padding-top: 2rem !important; }
     }
+
+    /* 버튼 스타일 통일 */
     div.stButton > button {
         width: 100%; height: 50px; font-weight: bold; font-size: 18px;
+    }
+    
+    /* 체크박스 선택 시 상세 입력칸 스타일 */
+    .stTextInput input {
+        background-color: #f9f9f9;
     }
 </style>
 """, unsafe_allow_html=True)
 
+
 # ==========================================================
-# STEP 3: 제출 완료
+# STEP 3: 제출 완료 화면
 # ==========================================================
 if st.session_state['step'] == 3:
     st.markdown("""
     <style> .block-container { padding-top: 50px !important; } </style>
     <div style="text-align: center; padding: 20px;">
-        <h1 style="color: #0068c3;">제출이 완료되었습니다!</h1>
-        <div style="background-color: #f8f9fa; padding: 30px; border-radius: 15px; margin: 30px 0;">
-            <p style="font-size: 18px; color: #555;">
+        <h1 style="color: #0068c3; margin-bottom: 20px;">제출이 완료되었습니다!</h1>
+        <div style="background-color: #f8f9fa; padding: 30px; border-radius: 15px; margin-bottom: 30px;">
+            <p style="font-size: 18px; color: #555; line-height: 1.6;">
                 작성해주신 소중한 정보를 바탕으로<br>
-                최선을 다해 진료하겠습니다.
+                정성을 담아 치료에 최선을 다해 임하겠습니다.<br>
+                진료실에서 뵙겠습니다.
             </p>
         </div>
         <h4 style="color: #333;">소유한의원 원장 최아랑 올림</h4>
     </div>
     """, unsafe_allow_html=True)
 
+
 # ==========================================================
-# STEP 0: 동의
+# STEP 0: 개인정보 동의 화면
 # ==========================================================
 elif st.session_state['step'] == 0:
     st.markdown("""
@@ -360,19 +380,29 @@ elif st.session_state['step'] == 0:
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("""
+    agreement_text = """
     **[필수] 개인정보 및 민감정보 수집·이용 동의**
-    1. **수집 목적**: 진료 예약 확인 및 사전 증상 분석
-    2. **보유 기간**: **전송 완료 후 서버에서 즉시 삭제**
-    """)
-    
-    if st.checkbox("위 내용을 확인하였으며, 이에 동의합니다."):
-        if st.button("다음 (작성 방법 안내)", type="primary"):
+
+    1. **수집 목적**: 진료 예약 확인 및 사전 증상 파악
+    2. **수집 항목**: 성명, 생년월일, 신체정보, 건강 관련 증상
+    3. **보유 기간**: **전송 완료 후 서버에서 즉시 삭제**
+    4. **거부 권리**: 동의를 거부할 수 있으나, 문진 이용이 제한됩니다.
+    """
+    st.markdown(agreement_text)
+
+    check = st.checkbox("위 내용을 확인하였으며, 이에 동의합니다.")
+    st.write("")
+
+    if st.button("다음 (작성 방법 안내)", type="primary"):
+        if check:
             st.session_state['step'] = 1
             st.rerun()
+        else:
+            st.warning("동의 항목에 체크해주셔야 합니다.")
+
 
 # ==========================================================
-# STEP 1: 안내
+# STEP 1: 설문지 작성 방법 안내
 # ==========================================================
 elif st.session_state['step'] == 1:
     st.markdown("""
@@ -383,19 +413,37 @@ elif st.session_state['step'] == 1:
     """, unsafe_allow_html=True)
 
     st.markdown("""
-    ### 📝 작성 방법
-    1. **증상 선택**: 해당되는 항목을 체크해 주세요.
-    2. **상세 기록**: 체크 후 나타나는 입력창에 **구체적인 증상(언제부터, 통증 양상 등)**을 적어주세요.
-    3. **데이터 분석**: 작성된 내용은 암호화된 코드(Code)로 변환되어 AI 분석 시스템에 전달됩니다.
-    """)
-    
+    ### 📝 설문지 작성 방법
+
+    보다 정확한 진단을 위해 아래 내용을 확인해 주세요.
+
+    1. **증상 선택**: 해당되는 항목을 각각 체크해 주세요.
+    2. **상세 기록**: 체크 후 나타나는 입력창에 **"언제부터, 어떻게 불편한지"** 자세히 적어주시면 더 정확한 치료가 가능합니다.
+    3. **데이터 분석**: 작성 내용은 암호화된 코드로 변환되어 AI 분석 시스템에 전달됩니다.
+
+    ---
+
+    ### 🏥 진료 프로세스 안내
+
+    작성하신 문진표는 다음 순서로 분석되어 진료에 활용됩니다.
+
+    1. **1차 진단**: 원장이 문진표를 바탕으로 환자분의 상태를 파악합니다.
+    2. **2차 정밀 분석**: 전문 의료 AI 시스템을 통해 현재 증상을 입체적으로 분석합니다.
+    3. **3차 검증 및 생성**: 원장이 직접 설계하고 학습시킨 AI 모델로 1, 2차 내용을 종합 검증하여 분석 자료를 생성합니다.
+    4. **최종 진단**: 내원 후 맥진, 복진 등 상세 진찰을 통해 최종적인 치료 방향을 결정합니다.
+
+    """, unsafe_allow_html=True)
+
     st.write("")
+    st.write("")
+
     if st.button("문진표 작성 시작하기", type="primary"):
         st.session_state['step'] = 2
         st.rerun()
 
+
 # ==========================================================
-# STEP 2: 문진표 작성
+# STEP 2: 문진표 작성 (Atomized Version)
 # ==========================================================
 elif st.session_state['step'] == 2:
     st.markdown("""
@@ -409,7 +457,7 @@ elif st.session_state['step'] == 2:
     st.markdown("#### 1. 환자 기초 정보")
     c1, c2 = st.columns(2)
     with c1:
-        name = st.text_input("성함", value=default_name)
+        name = st.text_input("성함", value=default_name, placeholder="예: 홍길동")
         height = st.text_input("키 (cm)")
     with c2:
         birth = st.text_input("생년월일 (6자리)", placeholder="예: 841121")
@@ -420,21 +468,22 @@ elif st.session_state['step'] == 2:
     st.info("💡 항목을 체크하면 상세 내용을 적을 수 있는 칸이 열립니다.")
 
     # ----------------------------------------------------
-    # 데이터 수집용 딕셔너리 (Code 기준 저장)
+    # 데이터 수집 (Code 기준)
     # ----------------------------------------------------
-    symptoms_log = {} # {"CODE_01": {"text": "...", "detail": "..."}, ...}
+    symptoms_log = {} 
 
-    # 루프: 대분류 -> 소분류 -> 항목리스트(딕셔너리)
+    # 루프: 대분류 -> 소분류(Context Header) -> 항목리스트
     for main_cat, sub_structure in questionnaire_data.items():
         with st.expander(main_cat):
             for sub_cat, items in sub_structure.items():
+                # 소분류 제목 출력 (여기에 '식후 1~2시간 이내' 등이 표시됨)
                 st.markdown(f"**[{sub_cat}]**")
                 
                 for item in items:
                     code = item["code"]
                     text = item["text"]
                     
-                    # 체크박스 (Key는 코드로 유니크하게)
+                    # 체크박스
                     is_checked = st.checkbox(text, key=f"chk_{code}")
                     
                     if is_checked:
@@ -443,14 +492,13 @@ elif st.session_state['step'] == 2:
                             f"└─ 상세 내용 ({text})",                            
                             key=f"txt_{code}"
                         )
-                        # 데이터 저장 (코드 기준)
                         symptoms_log[code] = {
-                            "증상명": text,       # 나중에 확인용 (Optional)
+                            "증상명": text,
                             "상세내용": detail_val
                         }
-                st.write("") # 소분류 간 간격
+                st.write("") # 간격
 
-            # 대분류 기타
+            # 대분류 기타란
             etc_key = f"ETC_{main_cat[:2]}"
             etc_val = st.text_area(f"[{main_cat}] 관련 기타 메모", height=60, key=f"note_{main_cat}")
             if etc_val:
@@ -462,28 +510,29 @@ elif st.session_state['step'] == 2:
     with st.expander("13. 복용 약물 및 과거력 (필수)"):
         c1, c2 = st.columns(2)
         with c1:
-            med = st.text_area("복용 중인 양약/한약", height=80)
+            med = st.text_area("현재 복용 중인 양약/한약", placeholder="약 이름이나 처방 목적", height=80)
             if med: history_log["복약"] = med
         with c2:
-            sup = st.text_area("건강기능식품", height=80)
+            sup = st.text_area("복용 중인 건강기능식품", placeholder="비타민, 오메가3 등", height=80)
             if sup: history_log["건기식"] = sup
         
-        op = st.text_area("수술 이력 및 치료 중인 질병", height=80)
+        op = st.text_area("수술 이력 및 치료 중인 질병", placeholder="수술명, 시기, 현재 치료중인 지병 등", height=80)
         if op: history_log["수술/지병"] = op
 
     # 4. 주소증
     st.markdown("---")
     st.markdown("#### 🎯 가장 치료하고 싶은 증상 (주소증)")
-    chief_complaint = st.text_area("가장 힘든 증상 1~2가지를 적어주세요.", height=100)
+    st.markdown("여러 증상 중, **가장 힘들어서 먼저 치료하고 싶은 1~2가지**를 구체적으로 적어주세요.")
+    chief_complaint = st.text_area("주소증 입력란", placeholder="예: 소화가 안 되면 머리가 아픈 게 제일 힘듭니다.", height=100)
 
-    st.write("\n")
+    st.write("\n\n")
     
     # 5. 제출
     _, btn_col, _ = st.columns([1,2,1])
     with btn_col:
         if st.button("문진표 제출하기", type="primary"):
             # 검증
-            clean_birth = birth.replace("-","").strip()
+            clean_birth = birth.replace("-","").replace(" ", "").strip()
             if len(clean_birth) == 8: clean_birth = clean_birth[2:]
 
             if not name or len(clean_birth) != 6:
@@ -491,14 +540,13 @@ elif st.session_state['step'] == 2:
             elif not chief_complaint:
                 st.warning("⚠️ '가장 치료하고 싶은 증상'을 반드시 적어주세요.")
             elif not symptoms_log and not history_log:
-                st.warning("⚠️ 증상을 하나라도 체크해 주세요.")
+                st.warning("⚠️ 증상을 하나라도 체크하거나 적어주세요.")
             else:
-                st.info("데이터 처리 중입니다...")
+                st.info("🔄 AI 분석 시스템으로 데이터를 전송 중입니다... 잠시만 기다려주세요.")
                 
-                # 최종 데이터 패키징 (JSON 구조 최적화)
                 final_dataset = {
                     "meta": {
-                        "version": "v2.0_code_based_granular",
+                        "version": "v2.1_atomized",
                         "timestamp": "auto_generated" 
                     },
                     "환자정보": {
@@ -508,7 +556,7 @@ elif st.session_state['step'] == 2:
                         "예약일시": reserved_date
                     },
                     "주소증": chief_complaint,
-                    "증상데이터": symptoms_log,  # { "DIG_01": { ... }, "DIG_02": { ... } }
+                    "증상데이터": symptoms_log,
                     "과거력": history_log
                 }
 
@@ -516,5 +564,9 @@ elif st.session_state['step'] == 2:
                 if res == "SUCCESS":
                     st.session_state['step'] = 3
                     st.rerun()
+                elif res == "NO_PASSWORD":
+                    st.error("🚨 서버 설정 오류: Secrets 비밀번호가 없습니다.")
+                elif res == "AUTH_ERROR":
+                    st.error("🚨 인증 실패: 네이버 아이디나 앱비밀번호를 확인하세요.")
                 else:
-                    st.error(f"전송 실패: {res}")
+                    st.error(f"🚨 전송 실패: {res}")
