@@ -199,7 +199,7 @@ def send_email_with_json(final_data):
         환자명: {patient_name}
         생년월일: {final_data['환자정보'].get('생년월일', '미입력')}
         예약정보: {final_data['환자정보'].get('예약일시', '정보없음')}
-
+        
         [주요 호소 증상]
         {final_data.get('주소증', '없음')}
         """
@@ -245,7 +245,7 @@ st.markdown("""
     }
     .header-title-small {font-size: 1.0rem; color: #666; margin: 0;}
     .header-title-large {font-size: 1.8rem; font-weight: 800; color: #333; margin-top: 5px;}
-
+    
     /* 컨테이너 여백 */
     .block-container { padding-top: 140px !important; max-width: 800px; }
 
@@ -254,7 +254,7 @@ st.markdown("""
         .pc-header { display: none !important; }
         .block-container { padding-top: 2rem !important; }
     }
-
+    
     /* 버튼 스타일 통일 */
     div.stButton > button {
         width: 100%;
@@ -262,7 +262,7 @@ st.markdown("""
         font-weight: bold;
         font-size: 18px;
     }
-
+    
     /* 체크박스 선택 시 텍스트 인풋 강조 */
     .detail-input {
         background-color: #f0f8ff;
@@ -273,6 +273,7 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
 
 # ==========================================================
 # STEP 3: 제출 완료 화면
@@ -307,7 +308,7 @@ elif st.session_state['step'] == 0:
         <div class="header-title-large">개인정보 동의</div>
     </div>
     """, unsafe_allow_html=True)
-
+    
     # 모바일 헤더
     st.markdown(f"""
     <div style='text-align:center; margin-bottom: 20px;'>
@@ -349,32 +350,32 @@ elif st.session_state['step'] == 1:
         <div class="header-title-large">문진표 작성 안내</div>
     </div>
     """, unsafe_allow_html=True)
-
+    
     st.markdown("""
     ### 📝 설문지 작성 방법
-
+    
     보다 정확한 진단을 위해 아래 내용을 확인해 주세요.
-
+    
     1. **증상 선택**: 불편하신 증상을 각 분류에서 선택해 주세요.
     2. **상세 기록**: 항목 선택 후 나타나는 입력창에 **"언제부터, 어떻게 불편한지"** 자세히 적어주시면 더 정확한 치료가 가능합니다.
     3. **기타 작성**: 선택지에 없는 내용은 각 항목의 '기타' 란에 적어주세요.
-
+    
     ---
-
+    
     ### 🏥 진료 프로세스 안내
-
+    
     작성하신 문진표는 다음 순서로 분석되어 진료에 활용됩니다.
-
+    
     1. **1차 진단**: 원장이 문진표를 바탕으로 환자분의 상태를 파악합니다.
     2. **2차 정밀 분석**: 전문 의료 AI 시스템을 통해 현재 증상을 입체적으로 분석합니다.
     3. **3차 검증 및 생성**: 원장이 직접 설계하고 학습시킨 AI 모델로 1, 2차 내용을 종합 검증하여 분석 자료를 생성합니다.
     4. **최종 진단**: 내원 후 맥진, 복진 등 상세 진찰을 통해 최종적인 치료 방향을 결정합니다.
-
+    
     """, unsafe_allow_html=True)
-
+    
     st.write("")
     st.write("")
-
+    
     if st.button("문진표 작성 시작하기", type="primary"):
         st.session_state['step'] = 2
         st.rerun()
@@ -415,35 +416,33 @@ elif st.session_state['step'] == 2:
     for main_category, sub_structure in questionnaire_structure.items():
         with st.expander(main_category):
             category_data = {}
-
+            
             # 소분류 루프
             for sub_category, items in sub_structure.items():
                 st.markdown(f"**[{sub_category}]**")
-
+                
                 selected_items = []
                 for item in items:
                     # 고유 키 생성
                     key_check = f"chk_{main_category}_{sub_category}_{item}"
                     key_text = f"txt_{main_category}_{sub_category}_{item}"
-
+                    
                     is_checked = st.checkbox(item, key=key_check)
-
+                    
                     if is_checked:
                         detail = st.text_input(
-                            f"└─ '{item}'에 대해 자세히 적어주세요.",
-                            placeholder="예: 3일 전부터 심해짐, 밤에 더 아픔 등",
+                            f"└─ '정확한 진단을 위해 {item}'에 대해 자세한 증상을 적어주세요.",                            
                             key=key_text
                         )
                         selected_items.append({"증상": item, "상세내용": detail})
-
+                
                 if selected_items:
                     category_data[sub_category] = selected_items
-
-                st.write("")  # 간격
+                
+                st.write("") # 간격
 
             # 대분류별 기타란
-            other_note = st.text_area(f"[{main_category}] 관련 기타 증상이나 메모", height=60,
-                                      placeholder="위 항목에 없는 증상이 있다면 적어주세요.", key=f"other_{main_category}")
+            other_note = st.text_area(f"[{main_category}] 관련 기타 증상이나 메모", height=60, placeholder="위 항목에 없는 증상이 있다면 적어주세요.", key=f"other_{main_category}")
             if other_note:
                 category_data["기타메모"] = other_note
 
@@ -464,7 +463,7 @@ elif st.session_state['step'] == 2:
         with c2:
             sup = st.text_area("복용 중인 건강기능식품", placeholder="비타민, 오메가3 등", height=80)
             if sup: medical_history["건강기능식품"] = sup
-
+        
         hist = st.text_area("수술 이력 및 치료 중인 질병", placeholder="수술명, 시기, 현재 치료중인 지병 등", height=80)
         if hist: medical_history["과거력"] = hist
 
@@ -499,12 +498,12 @@ elif st.session_state['step'] == 2:
             else:
                 # 2. 전송 중 메시지
                 st.info("🔄 AI 분석 시스템으로 데이터를 전송 중입니다... 잠시만 기다려주세요.")
-
+                
                 # 3. 데이터 패키징
                 final_data = {
                     "환자정보": {
-                        "성함": name,
-                        "생년월일": cleaned_birth,
+                        "성함": name, 
+                        "생년월일": cleaned_birth, 
                         "신체정보": f"{height}cm / {weight}kg",
                         "예약일시": reserved_date
                     },
@@ -512,7 +511,7 @@ elif st.session_state['step'] == 2:
                     "문진내용": collected_responses,
                     "과거력및약물": medical_history
                 }
-
+                
                 # 4. 이메일 전송
                 result = send_email_with_json(final_data)
 
